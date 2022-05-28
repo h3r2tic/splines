@@ -100,9 +100,8 @@ impl<T, V> Spline<T, V> {
   ///
   /// `None` if you try to sample a value at a time that has no key associated with. That can also
   /// happen if you try to sample between two keys with a specific interpolation mode that makes the
-  /// sampling impossible. For instance, [`Interpolation::CatmullRom`] requires *four* keys. If
-  /// you’re near the beginning of the spline or its end, ensure you have enough keys around to make
-  /// the sampling.
+  /// sampling impossible. If you’re near the beginning of the spline or its end, ensure you have enough
+  /// keys around to make the sampling.
   pub fn sample_with_key(&self, t: T) -> Option<SampledWithKey<V>>
   where
     T: Interpolator,
@@ -138,25 +137,19 @@ impl<T, V> Spline<T, V> {
       }
 
       Interpolation::CatmullRom => {
-        // We need at least four points for Catmull Rom; ensure we have them, otherwise, return
-        // None.
-        if i == 0 || i >= keys.len() - 2 {
-          None
-        } else {
-          let cp1 = &keys[i + 1];
-          let cpm0 = &keys[i - 1];
-          let cpm1 = &keys[i + 2];
-          let nt = t.normalize(cp0.t, cp1.t);
-          let value = V::cubic_hermite(
-            nt,
-            (cpm0.t, cpm0.value),
-            (cp0.t, cp0.value),
-            (cp1.t, cp1.value),
-            (cpm1.t, cpm1.value),
-          );
+        let cp1 = &keys[i + 1];
+        let cpm0 = &keys[i.saturating_sub(1)];
+        let cpm1 = &keys[(i + 2).min(keys.len() - 1)];
+        let nt = t.normalize(cp0.t, cp1.t);
+        let value = V::cubic_hermite(
+          nt,
+          (cpm0.t, cpm0.value),
+          (cp0.t, cp0.value),
+          (cp1.t, cp1.value),
+          (cpm1.t, cpm1.value),
+        );
 
-          Some(value)
-        }
+        Some(value)
       }
 
       Interpolation::Bezier(u) | Interpolation::StrokeBezier(_, u) => {

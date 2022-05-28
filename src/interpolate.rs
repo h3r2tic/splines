@@ -123,20 +123,16 @@ macro_rules! impl_Interpolate {
 
       fn cubic_hermite(t: $t, x: ($t, Self), a: ($t, Self), b: ($t, Self), y: ($t, Self)) -> Self {
         // sampler stuff
-        let two_t = t * 2.;
-        let three_t = t * 3.;
         let t2 = t * t;
         let t3 = t2 * t;
-        let two_t3 = t3 * two_t;
-        let three_t2 = t2 * three_t;
 
         // tangents
         let m0 = (b.1 - x.1) / (b.0 - x.0);
         let m1 = (y.1 - a.1) / (y.0 - a.0);
 
-        a.1 * (two_t3 - three_t2 + 1.)
-          + m0 * (t3 - t2 * two_t + t)
-          + b.1 * (three_t2 - two_t3)
+        a.1 * (t3 * 2.0 - t2 * 3.0 + 1.)
+          + m0 * (t3 - t2 * 2.0 + t)
+          + b.1 * (t2 * 3.0 - t3 * 2.0)
           + m1 * (t3 - t2)
       }
 
@@ -188,20 +184,16 @@ macro_rules! impl_InterpolateT {
       fn cubic_hermite(t: $t, x: ($t, Self), a: ($t, Self), b: ($t, Self), y: ($t, Self)) -> Self {
         // sampler stuff
         let t = Self::from(t);
-        let two_t = t * 2.;
-        let three_t = t * 3.;
         let t2 = t * t;
         let t3 = t2 * t;
-        let two_t3 = t3 * two_t;
-        let three_t2 = t2 * three_t;
 
         // tangents
         let m0 = (b.1 - x.1) / (Self::from(b.0 - x.0));
         let m1 = (y.1 - a.1) / (Self::from(y.0 - a.0));
 
-        a.1 * (two_t3 - three_t2 + 1.)
-          + m0 * (t3 - t2 * two_t + t)
-          + b.1 * (three_t2 - two_t3)
+        a.1 * (t3 * 2.0 - t2 * 3.0 + 1.)
+          + m0 * (t3 - t2 * 2.0 + t)
+          + b.1 * (t2 * 3.0 - t3 * 2.0)
           + m1 * (t3 - t2)
       }
 
