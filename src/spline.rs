@@ -138,16 +138,23 @@ impl<T, V> Spline<T, V> {
 
       Interpolation::CatmullRom => {
         let cp1 = &keys[i + 1];
-        let cpm0 = &keys[i.saturating_sub(1)];
-        let cpm1 = &keys[(i + 2).min(keys.len() - 1)];
+
+        let cpm0 = if i > 0 {
+          let cpm0 = &keys[i - 1];
+          Some((cpm0.t, cpm0.value))
+        } else {
+          None
+        };
+
+        let cpm1 = if i + 2 < keys.len() {
+          let cpm1 = &keys[i + 2];
+          Some((cpm1.t, cpm1.value))
+        } else {
+          None
+        };
+
         let nt = t.normalize(cp0.t, cp1.t);
-        let value = V::cubic_hermite(
-          nt,
-          (cpm0.t, cpm0.value),
-          (cp0.t, cp0.value),
-          (cp1.t, cp1.value),
-          (cpm1.t, cpm1.value),
-        );
+        let value = V::cubic_hermite(nt, cpm0, (cp0.t, cp0.value), (cp1.t, cp1.value), cpm1);
 
         Some(value)
       }

@@ -79,7 +79,13 @@ pub trait Interpolate<T>: Sized + Copy {
   fn cosine(t: T, a: Self, b: Self) -> Self;
 
   /// Cubic hermite interpolation.
-  fn cubic_hermite(t: T, x: (T, Self), a: (T, Self), b: (T, Self), y: (T, Self)) -> Self;
+  fn cubic_hermite(
+    t: T,
+    x: Option<(T, Self)>,
+    a: (T, Self),
+    b: (T, Self),
+    y: Option<(T, Self)>,
+  ) -> Self;
 
   /// Quadratic Bézier interpolation.
   ///
@@ -121,14 +127,31 @@ macro_rules! impl_Interpolate {
         a * (1. - t) + b * t
       }
 
-      fn cubic_hermite(t: $t, x: ($t, Self), a: ($t, Self), b: ($t, Self), y: ($t, Self)) -> Self {
+      fn cubic_hermite(
+        t: $t,
+        x: Option<($t, Self)>,
+        a: ($t, Self),
+        b: ($t, Self),
+        y: Option<($t, Self)>,
+      ) -> Self {
         // sampler stuff
         let t2 = t * t;
         let t3 = t2 * t;
 
+        let t_range = b.0 - a.0;
+
         // tangents
-        let m0 = (b.1 - x.1) / (b.0 - x.0);
-        let m1 = (y.1 - a.1) / (y.0 - a.0);
+        let m0 = if let Some(x) = x {
+          (b.1 - x.1) / ((b.0 - x.0) / t_range)
+        } else {
+          a.1 * 0.0
+        };
+
+        let m1 = if let Some(y) = y {
+          (y.1 - a.1) / ((y.0 - a.0) / t_range)
+        } else {
+          a.1 * 0.0
+        };
 
         a.1 * (t3 * 2.0 - t2 * 3.0 + 1.)
           + m0 * (t3 - t2 * 2.0 + t)
@@ -181,15 +204,32 @@ macro_rules! impl_InterpolateT {
         a * (1. - t) + b * t
       }
 
-      fn cubic_hermite(t: $t, x: ($t, Self), a: ($t, Self), b: ($t, Self), y: ($t, Self)) -> Self {
+      fn cubic_hermite(
+        t: $t,
+        x: Option<($t, Self)>,
+        a: ($t, Self),
+        b: ($t, Self),
+        y: Option<($t, Self)>,
+      ) -> Self {
         // sampler stuff
         let t = Self::from(t);
         let t2 = t * t;
         let t3 = t2 * t;
 
+        let t_range = b.0 - a.0;
+
         // tangents
-        let m0 = (b.1 - x.1) / (Self::from(b.0 - x.0));
-        let m1 = (y.1 - a.1) / (Self::from(y.0 - a.0));
+        let m0 = if let Some(x) = x {
+          (b.1 - x.1) / Self::from((b.0 - x.0) / t_range)
+        } else {
+          Self::from(0.0)
+        };
+
+        let m1 = if let Some(y) = y {
+          (y.1 - a.1) / Self::from((y.0 - a.0) / t_range)
+        } else {
+          Self::from(0.0)
+        };
 
         a.1 * (t3 * 2.0 - t2 * 3.0 + 1.)
           + m0 * (t3 - t2 * 2.0 + t)
